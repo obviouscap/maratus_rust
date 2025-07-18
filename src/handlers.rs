@@ -1,10 +1,12 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use bson::{doc, Bson, DateTime as BsonDateTime};
 use chrono::Utc;
+use futures::TryStreamExt;
 use mongodb::{
-    options::{FindOneAndUpdateOptions, ReturnDocument, UpdateOptions},
+    options::{FindOneAndUpdateOptions, FindOptions, ReturnDocument, UpdateOptions},
     Database,
 };
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::models::{Participant, Conversation, ConvParticipant, Message};
@@ -27,7 +29,7 @@ pub async fn ingest(
     let p = payload.into_inner();
     let part_coll = db.collection::<Participant>("participants");
     let conv_coll = db.collection::<Conversation>("conversations");
-    let msg_coll  = db.collection::<Message>("messages");
+    let msg_coll = db.collection::<Message>("messages");
 
     // 1) upsert participant
     let part = part_coll
@@ -35,13 +37,11 @@ pub async fn ingest(
             doc! { "address": &p.from_address },
             doc! {
               "$setOnInsert": { "address": &p.from_address },
-              "$set":        { "display_name": &p.from_name }
+              "$set": { "display_name": &p.from_name }
             },
-            FindOneAndUpdateOptions::builder()
-                .upsert(true)
-                .return_document(ReturnDocument::After)
-                .build(),
         )
+        .upsert(true)
+        .return_document(ReturnDocument::After)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
         .expect("just inserted or found");
@@ -59,25 +59,29 @@ pub async fn ingest(
                 "participants": []
               }
             },
-            FindOneAndUpdateOptions::builder()
-                .upsert(true)
-                .return_document(ReturnDocument::After)
-                .build(),
         )
+        .upsert(true)
+        .return_document(ReturnDocument::After)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
         .expect("just inserted or found");
 
     // 3) ensure the participant is in conversation.participants
+    // Convert UUID to string for BSON compatibility
+    let part_id_str = part.id.to_string();
+    let conv_id_str = conv.id.to_string();
     let join_link = doc! {
-      "participant_id": part.id,
+      "participant_id": &part_id_str,
       "joined_at": BsonDateTime::now()
     };
+    
     let _ = conv_coll
         .update_one(
-            doc! { "_id": conv.id, "participants.participant_id": { "$ne": &part.id } },
+            doc! { 
+                "_id": &conv_id_str, 
+                "participants.participant_id": { "$ne": &part_id_str } 
+            },
             doc! { "$push": { "participants": join_link } },
-            UpdateOptions::builder().build(),
         )
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -89,15 +93,17 @@ pub async fn ingest(
         sender_id: part.id,
         channel: p.channel,
         external_id: Some(p.conversation_ext_id),
-        sent_at: BsonDateTime::from_chrono(p.sent_at),
+        // Convert chrono DateTime to BsonDateTime
+        sent_at: BsonDateTime::from_millis(p.sent_at.timestamp_millis()),
         content: p.content,
     };
+    
     msg_coll
-        .insert_one(&new_msg, None)
+        .insert_one(new_msg)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Ok().json(new_msg))
+    Ok(HttpResponse::Ok().json("Message inserted successfully"))
 }
 
 #[get("/conversations/{id}")]
@@ -108,21 +114,30 @@ pub async fn get_conversation(
     let conv_id = path.into_inner();
     let conv_coll = db.collection::<Conversation>("conversations");
     let part_coll = db.collection::<Participant>("participants");
-    let msg_coll  = db.collection::<Message>("messages");
+    let msg_coll = db.collection::<Message>("messages");
 
+    // Convert UUID to string for BSON compatibility
+    let conv_id_str = conv_id.to_string();
+    
     // load conversation
     let conv = conv_coll
-        .find_one(doc! { "_id": conv_id }, None)
+        .find_one(doc! { "_id": &conv_id_str })
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Conversation not found"))?;
 
     // load participants
-    let ids: Vec<Uuid> = conv.participants.iter().map(|cp| cp.participant_id).collect();
+    let ids: Vec<String> = conv.participants.iter()
+        .map(|cp| cp.participant_id.to_string())
+        .collect();
+    
+    let id_array = ids.iter().map(|id| Bson::String(id.clone())).collect();
+    
     let mut cursor = part_coll
-        .find(doc! { "_id": { "$in": Bson::Array(ids.iter().map(|&u| Bson::Uuid(u)).collect()) } }, None)
+        .find(doc! { "_id": { "$in": Bson::Array(id_array) } })
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
+    
     let mut parts = Vec::new();
     while let Some(p) = cursor
         .try_next()
@@ -133,15 +148,16 @@ pub async fn get_conversation(
     }
 
     // load messages
+    let options = FindOptions::builder()
+        .sort(doc! { "sent_at": 1 })
+        .build();
+    
     let mut mc = msg_coll
-        .find(
-            doc! { "conversation_id": conv_id },
-            mongodb::options::FindOptions::builder()
-                .sort(doc! { "sent_at":  1 })
-                .build(),
-        )
+        .find(doc! { "conversation_id": &conv_id_str })
+        .with_options(options)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
+    
     let mut msgs = Vec::new();
     while let Some(m) = mc
         .try_next()
