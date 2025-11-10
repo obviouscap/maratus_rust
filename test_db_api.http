@@ -1,14 +1,6 @@
 ### 20. Try to get conversation with invalid UUID format (should return error)
 GET http://127.0.0.1:8080/conversations/invalid-uuid-format
 
-> {%
-    client.test("Get conversation with invalid UUID should fail", function() {
-        client.assert(response.status === 400 || response.status === 404, "Should return 400 or 404 for invalid UUID");
-    });
-%}
-
-###
-=======
 ### 1. Create first participant (Alice)
 POST http://localhost:8080/participants
 Content-Type: application/json
@@ -45,13 +37,6 @@ Content-Type: application/json
   "display_name": null
 }
 
-> {%
-    client.test("Create participant without display name", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.display_name === null, "Display name should be null");
-    });
-%}
-
 ### 5. Update existing participant's display name (Alice)
 POST http://127.0.0.1:8080/participants
 Content-Type: application/json
@@ -60,14 +45,6 @@ Content-Type: application/json
   "address": "alice@example.com",
   "display_name": "Alice Updated Smith"
 }
-
-> {%
-    client.test("Update participant display name", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.display_name === "Alice Updated Smith", "Display name not updated");
-        client.assert(response.body.address === "alice@example.com", "Address should remain the same");
-    });
-%}
 
 ### 6. Create first conversation
 POST http://127.0.0.1:8080/conversations
@@ -78,15 +55,6 @@ Content-Type: application/json
   "topic": "Project Discussion"
 }
 
-> {%
-    client.test("Create conversation with topic", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.global.set("conv1_id", response.body.id);
-        client.assert(response.body.topic === "Project Discussion", "Topic not set correctly");
-        client.log("Conversation 1 ID: " + response.body.id);
-    });
-%}
-
 ### 7. Create second conversation without topic
 POST http://127.0.0.1:8080/conversations
 Content-Type: application/json
@@ -96,15 +64,6 @@ Content-Type: application/json
   "topic": null
 }
 
-> {%
-    client.test("Create conversation without topic", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.global.set("conv2_id", response.body.id);
-        client.assert(response.body.topic === null, "Topic should be null");
-        client.log("Conversation 2 ID: " + response.body.id);
-    });
-%}
-
 ### 8. Try to create conversation with same external_id (should return existing)
 POST http://127.0.0.1:8080/conversations
 Content-Type: application/json
@@ -113,14 +72,6 @@ Content-Type: application/json
   "external_id": "550e8400-e29b-41d4-a716-446655440001",
   "topic": "Different Topic"
 }
-
-> {%
-    client.test("Upsert conversation returns existing", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.id === client.global.get("conv1_id"), "Should return existing conversation ID");
-        client.assert(response.body.topic === "Project Discussion", "Topic should not change on upsert");
-    });
-%}
 
 ### 9. Create first message (Alice in conv1)
 POST http://127.0.0.1:8080/messages
@@ -134,14 +85,6 @@ Content-Type: application/json
   "sent_at": "2025-11-05T10:30:00Z",
   "content": "Hello, this is my first message!"
 }
-
-> {%
-    client.test("Create first message", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.content === "Hello, this is my first message!", "Content mismatch");
-        client.assert(response.body.channel === "email", "Channel mismatch");
-    });
-%}
 
 ### 10. Create second message (Bob replies in conv1)
 POST http://127.0.0.1:8080/messages

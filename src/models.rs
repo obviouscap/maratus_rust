@@ -1,6 +1,6 @@
 use bson::DateTime as BsonDateTime;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use bson::Uuid;
 
 // ___ participants collection ___
 #[derive(Debug, Serialize, Deserialize, Clone)]

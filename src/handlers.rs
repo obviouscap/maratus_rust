@@ -47,7 +47,7 @@ pub async fn create_participant(
             doc! { "address": &p.address },
             doc! {
               "$setOnInsert": { 
-                "_id": Uuid::new_v4().to_string(),
+                "_id": bson::Uuid::from_bytes(Uuid::new_v4().into_bytes()),
                 "address": &p.address 
               },
               "$set": { "display_name": &p.display_name }
@@ -294,9 +294,9 @@ pub async fn create_message(
 
     // Insert the message
     let new_msg = Message {
-        id: Uuid::new_v4(),
-        conversation_id: p.conversation_id,
-        sender_id: p.sender_id,
+        id: bson::Uuid::from_bytes(Uuid::new_v4().into_bytes()),
+        conversation_id: bson::Uuid::from_bytes(p.conversation_id.into_bytes()),
+        sender_id: bson::Uuid::from_bytes(p.sender_id.into_bytes()),
         channel: p.channel,
         external_id: p.external_id,
         sent_at: BsonDateTime::from_millis(p.sent_at.timestamp_millis()),
