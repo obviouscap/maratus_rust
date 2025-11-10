@@ -17,7 +17,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(db.clone()))
-            .service(handlers::create_participant)
+            .service(handlers::create_participant)add
             .service(handlers::get_all_participants)
             .service(handlers::get_participant)
             .service(handlers::create_conversation)
@@ -26,6 +26,10 @@ async fn main() -> std::io::Result<()> {
             .service(handlers::create_message)
             .service(handlers::get_all_messages)
             .service(handlers::get_message)
+            .service(handlers::update_conversation_metadata)
+            .service(handlers::update_message_metadata)
+            .service(handlers::create_message_summary)
+            .service(handlers::get_conversation_summaries)
     })
         .bind(("127.0.0.1", 8080))?
         .run()
