@@ -15,6 +15,9 @@ use crate::models::{Participant, Conversation, ConvParticipant, Message, Partici
 pub struct CreateParticipantPayload {
     pub address: String,
     pub display_name: Option<String>,
+    #[serde(rename = "type")]
+    pub participant_type: ParticipantType,
+    pub description: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -43,6 +46,10 @@ pub async fn create_participant(
     let p = payload.into_inner();
     let part_coll = db.collection::<Participant>("participants");
 
+    // Serialize participant_type to BSON
+    let participant_type_bson = bson::to_bson(&p.participant_type)
+        .map_err(actix_web::error::ErrorInternalServerError)?;
+
     // Upsert participant
     let part = part_coll
         .find_one_and_update(
@@ -52,7 +59,11 @@ pub async fn create_participant(
                 "_id": bson::Uuid::from_bytes(Uuid::new_v4().into_bytes()),
                 "address": &p.address 
               },
-              "$set": { "display_name": &p.display_name }
+              "$set": { 
+                "display_name": &p.display_name,
+                "type": participant_type_bson,
+                "description": &p.description
+              }
             },
         )
         .upsert(true)

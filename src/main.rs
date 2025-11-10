@@ -17,7 +17,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(db.clone()))
-            .service(handlers::create_participant)add
+            .service(handlers::create_participant)
             .service(handlers::get_all_participants)
             .service(handlers::get_participant)
             .service(handlers::create_conversation)

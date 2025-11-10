@@ -7,7 +7,8 @@ Content-Type: application/json
 
 {
   "address": "alice@example.com",
-  "display_name": "Alice Smith"
+  "display_name": "Alice Smith",
+  "type": "human"
 }
 
 ### 2. Create second participant (Bob)
@@ -16,7 +17,8 @@ Content-Type: application/json
 
 {
   "address": "bob@example.com",
-  "display_name": "Bob Johnson"
+  "display_name": "Bob Johnson",
+  "type": "human"
 }
 
 ### 3. Create third participant (Charlie)
@@ -25,7 +27,8 @@ Content-Type: application/json
 
 {
   "address": "charlie@example.com",
-  "display_name": "Charlie Davis"
+  "display_name": "Charlie Davis",
+  "type": "human"
 }
 
 ### 4. Create participant without display name
