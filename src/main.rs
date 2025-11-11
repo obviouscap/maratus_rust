@@ -17,17 +17,21 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(db.clone()))
+            // Participant handlers
             .service(handlers::create_participant)
             .service(handlers::get_all_participants)
             .service(handlers::get_participant)
+            // Conversation handlers
             .service(handlers::create_conversation)
             .service(handlers::get_all_conversations)
             .service(handlers::get_conversation)
+            .service(handlers::update_conversation_metadata)
+            // Message handlers
             .service(handlers::create_message)
             .service(handlers::get_all_messages)
             .service(handlers::get_message)
-            .service(handlers::update_conversation_metadata)
             .service(handlers::update_message_metadata)
+            // Message summary handlers
             .service(handlers::create_message_summary)
             .service(handlers::get_conversation_summaries)
     })
