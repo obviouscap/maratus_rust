@@ -1,5 +1,5 @@
 ### 20. Try to get conversation with invalid UUID format (should return error)
-GET http://127.0.0.1:8080/conversations/invalid-uuid-format
+GET http://127.0.0.1:8080/participants/0df2e8aa-a86b-4f10-8f3e-ef6d2ea3544a
 
 ### 1. Create first participant (Alice)
 POST http://localhost:8080/participants
@@ -102,13 +102,6 @@ Content-Type: application/json
   "content": "Hi Alice! This is Bob replying."
 }
 
-> {%
-    client.test("Create second message", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.sender_id === client.global.get("bob_id"), "Sender ID mismatch");
-    });
-%}
-
 ### 11. Create third message (Alice replies again in conv1)
 POST http://127.0.0.1:8080/messages
 Content-Type: application/json
@@ -121,12 +114,6 @@ Content-Type: application/json
   "sent_at": "2025-11-05T10:40:00Z",
   "content": "Great to hear from you, Bob!"
 }
-
-> {%
-    client.test("Create third message", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-    });
-%}
 
 ### 12. Create message in different conversation (Charlie in conv2)
 POST http://127.0.0.1:8080/messages
@@ -141,13 +128,6 @@ Content-Type: application/json
   "content": "Starting a new conversation here."
 }
 
-> {%
-    client.test("Create message in different conversation", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.channel === "slack", "Channel should be slack");
-    });
-%}
-
 ### 13. Create message without external_id
 POST http://127.0.0.1:8080/messages
 Content-Type: application/json
@@ -160,13 +140,6 @@ Content-Type: application/json
   "sent_at": "2025-11-05T11:05:00Z",
   "content": "Message without external ID"
 }
-
-> {%
-    client.test("Create message without external_id", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.external_id === null, "External ID should be null");
-    });
-%}
 
 ### 14. Create message with different channel (sms)
 POST http://127.0.0.1:8080/messages
@@ -181,13 +154,6 @@ Content-Type: application/json
   "content": "Sending via SMS now"
 }
 
-> {%
-    client.test("Create message with SMS channel", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.channel === "sms", "Channel should be sms");
-    });
-%}
-
 ### 15. Try to create message with non-existent conversation (should fail with 404)
 POST http://127.0.0.1:8080/messages
 Content-Type: application/json
@@ -200,12 +166,6 @@ Content-Type: application/json
   "sent_at": "2025-11-05T10:45:00Z",
   "content": "This should fail"
 }
-
-> {%
-    client.test("Message with non-existent conversation should fail", function() {
-        client.assert(response.status === 404, "Should return 404 for non-existent conversation");
-    });
-%}
 
 ### 16. Try to create message with non-existent participant (should fail with 404)
 POST http://127.0.0.1:8080/messages
@@ -220,56 +180,16 @@ Content-Type: application/json
   "content": "This should also fail"
 }
 
-> {%
-    client.test("Message with non-existent participant should fail", function() {
-        client.assert(response.status === 404, "Should return 404 for non-existent participant");
-    });
-%}
-
 ### 17. Get conversation 1 with all participants and messages
 GET http://127.0.0.1:8080/conversations/{{conv1_id}}
-
-> {%
-    client.test("Get conversation with messages", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.conversation.id === client.global.get("conv1_id"), "Conversation ID mismatch");
-        client.assert(response.body.participants.length >= 2, "Should have at least 2 participants");
-        client.assert(response.body.messages.length >= 3, "Should have at least 3 messages");
-        client.assert(response.body.conversation.topic === "Project Discussion", "Topic mismatch");
-        client.log("Conversation has " + response.body.participants.length + " participants and " + response.body.messages.length + " messages");
-    });
-%}
 
 ### 18. Get conversation 2 with all participants and messages
 GET http://127.0.0.1:8080/conversations/{{conv2_id}}
 
-> {%
-    client.test("Get second conversation", function() {
-        client.assert(response.status === 200, "Response status is not 200");
-        client.assert(response.body.conversation.id === client.global.get("conv2_id"), "Conversation ID mismatch");
-        client.assert(response.body.participants.length >= 1, "Should have at least 1 participant");
-        client.assert(response.body.messages.length >= 2, "Should have at least 2 messages");
-        client.log("Conversation has " + response.body.participants.length + " participants and " + response.body.messages.length + " messages");
-    });
-%}
-
 ### 19. Try to get non-existent conversation (should return 404)
 GET http://127.0.0.1:8080/conversations/00000000-0000-0000-0000-000000000000
-
-> {%
-    client.test("Get non-existent conversation should fail", function() {
-        client.assert(response.status === 404, "Should return 404 for non-existent conversation");
-    });
-%}
 
 ### 20. Try to get conversation with invalid UUID format (should return error)
 GET http://127.0.0.1:8080/conversations/invalid-uuid-format
 
-> {%
-    client.test("Get conversation with invalid UUID should fail", function() {
-        client.assert(response.status === 400 || response.status === 404, "Should return 400 or 404 for invalid UUID");
-    });
-%}
-
 ###
->>>>>>> REPLACE

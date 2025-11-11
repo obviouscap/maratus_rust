@@ -56,7 +56,7 @@ pub async fn create_participant(
             doc! { "address": &p.address },
             doc! {
               "$setOnInsert": { 
-                "_id": bson::Uuid::from_bytes(Uuid::new_v4().into_bytes()),
+                "_id": Uuid::new_v4().to_string(),
                 "address": &p.address 
               },
               "$set": { 
@@ -108,15 +108,13 @@ pub async fn get_all_participants(
 #[get("/participants/{id}")]
 pub async fn get_participant(
     db: web::Data<Database>,
-    path: web::Path<Uuid>,
+    path: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
-    let part_id = path.into_inner();
+    let part_id = Uuid::parse_str(&path).unwrap();
     let part_coll = db.collection::<Participant>("participants");
 
-    let part_id_str = part_id.to_string();
-
     let part = part_coll
-        .find_one(doc! { "_id": &part_id_str })
+        .find_one(doc! { "_id": part_id.to_string() })
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Participant not found"))?;
