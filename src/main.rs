@@ -35,7 +35,7 @@ async fn main() -> std::io::Result<()> {
             .service(handlers::create_message_summary)
             .service(handlers::get_conversation_summaries)
     })
-        .bind(("127.0.0.1", 8080))?
+        .bind(("0.0.0.0", 8080))?
         .run()
         .await
 }

@@ -1,5 +1,5 @@
 ### 20. Try to get conversation with invalid UUID format (should return error)
-GET http://127.0.0.1:8080/participants/0df2e8aa-a86b-4f10-8f3e-ef6d2ea3544a
+GET http://127.0.0.1:8080/participants/ede9a010-5af7-49b3-835e-382e7a664e4b
 
 ### 1. Create first participant (Alice)
 POST http://localhost:8080/participants
