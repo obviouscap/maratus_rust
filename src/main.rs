@@ -6,8 +6,8 @@ use mongodb::{Client, Database};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let mongo_uri = std::env::var("MONGODB_URI")
-        .unwrap_or_else(|_| "mongodb://root:example@127.0.0.1:27017".into());
+    let mongo_uri = std::env::var("MONGO_URL")
+        .unwrap_or_else(|_| "mongodb://root:example@mongo:27017/mydb?authSource=admin".into());
     let client: Client = Client::with_uri_str(&mongo_uri)
         .await
         .expect("failed to connect to MongoDB");

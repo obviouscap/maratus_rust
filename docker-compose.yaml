@@ -1,4 +1,13 @@
 services:
+  app:
+    build: .
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URL: mongodb://root:example@mongo:27017/mydb?authSource=admin
+    ports:
+      - 8080:8080
+
   mongo:
     image: mongo
     restart: always

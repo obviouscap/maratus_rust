@@ -91,6 +91,7 @@ pub async fn get_participant(
 ) -> actix_web::Result<impl Responder> {
     let part_id = path.into_inner();
     let part_coll = db.collection::<Participant>("participants");
+    println!("Start to process query {part_id}");
 
     let part = part_coll
         .find_one(doc! { "_id": &part_id })
